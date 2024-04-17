@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Yahtzee
 {
@@ -24,54 +25,103 @@ namespace Yahtzee
 
         static void Main(string[] args)
         {
-            /*
-             * declare variables for the user's scorecard and the computer's scorecard
-             * declare a variable for the number of turns the user has taken and another for the number of moves the computer has taken
-             * declare a boolean that knows if it is the user's turn and set it to false
-             * 
-             * call ResetScorecard for the user
-             * call ResetScorecard for the computer
-             * 
-             * set the window size of the console window because displaying the scorecard requires about 50 lines
-             * 
-             * do
-             *      set the userTurn variable to the opposite value
-             *      call UpdateScorecard for the user
-             *      call UpdateScorecard for the computer
-             *      call DisplayScorecards
-             *      if it's the user's turn
-             *          display a message
-             *          you might also want to pause
-             *          call UserPlay
-             *      else
-             *          display a message
-             *          call ComputerPlay
-             *      end if
-             *  while both the user's count and the computer's count are <= yahtzee
-             *  
-             *  call UpdateScorecard for the user
-             *  call UpdateScorecard for the computer
-             *  call DisplayScorecards
-             *  
-             *  display a message about who won
-             */
+            // declare variables for the user's scorecard and the computer's scorecard
+            int[] userScorecard = new int[16];
+            int[] computerScorecard = new int[16];
+
+            // declare a variable for the number of turns the user has taken and another for the number of moves the computer has taken
+            int userTurns = 0;
+            int computerTurns = 0;
+
+            // declare a boolean that knows if it is the user's turn and set it to false
+            bool userTurn = false;
+
+            // call ResetScorecard for the user
+            ResetScorecard(userScorecard);
+            // call ResetScorecard for the computer
+            ResetScorecard(computerScorecard);
+
+            // set the window size of the console window because displaying the scorecard requires about 50 lines
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
+                Console.SetWindowSize(80, 50);
+            }
+
+            do
+            {
+                // set the userTurn variable to the opposite value
+                userTurn = !userTurn;
+
+                // call UpdateScorecard for the user
+                UpdateScorecard(userScorecard);
+                // call UpdateScorecard for the computer
+                UpdateScorecard(computerScorecard);
+
+                // call DisplayScorecards
+                DisplayScoreCards(userScorecard, computerScorecard);
+
+                if (userTurn)
+                {
+                    // display a message
+                    Console.WriteLine("It's your turn.");
+                    // you might also want to pause
+                    Pause();
+                    // call UserPlay
+                    UserPlay(userScorecard, ref userTurns);
+                    // increment the user's turn count
+                    userTurns++;
+                }
+                else
+                {
+                    // display a message
+                    Console.WriteLine("It's the computer's turn.");
+                    // you might also want to pause
+                    Pause();
+                    // call ComputerPlay
+                    ComputerPlay(computerScorecard, ref computerTurns);
+                    // increment the computer's turn count
+                    computerTurns++;
+                }
+            }
+            while (userTurns <= YAHTZEE && computerTurns <= YAHTZEE);
+
+            // call UpdateScorecard for the user
+            UpdateScorecard(userScorecard);
+            // call UpdateScorecard for the computer
+            UpdateScorecard(computerScorecard);
+
+            // call DisplayScorecards
+            DisplayScoreCards(userScorecard, computerScorecard);
+
+            // display a message about who won
+            if (userScorecard[TOTAL] > computerScorecard[TOTAL])
+            {
+                Console.WriteLine("Congratulations! You won!");
+            }
+            else if (userScorecard[TOTAL] < computerScorecard[TOTAL])
+            {
+                Console.WriteLine("The computer won. Better luck next time!");
+            }
+            else
+            {
+                Console.WriteLine("It's a tie!");
+            }
 
             Console.ReadLine();
         }
 
         #region Scorecard Methods
 
-        // sets all of the items in a scorecard to -1 to start the game
-        // takes a data structure for a scorecard and the corresponding score card count as parameters.  Both are altered by the method.
-        static void ResetScorecard(/* TODO */)
+        static void ResetScorecard(int[] scorecard)
         {
+            for (int i = 0; i < scorecard.Length; i++)
+            {
+                scorecard[i] = -1; // Set each item in the scorecard to -1
+            }
         }
 
-        // calculates the subtotal, bonus and the total for the scorecard
-        // takes a data structure for a scorecard as it's parameter
-        static void UpdateScorecard(/* TODO */)
+        static void UpdateScorecard(int[] scorecard)
         {
-            /* you can uncomment this code once you declare the parameter
             scorecard[SUBTOTAL] = 0;
             scorecard[BONUS] = 0;
             for (int i = ONES; i <= SIXES; i++)
@@ -85,7 +135,6 @@ namespace Yahtzee
             for (int i = THREE_OF_A_KIND; i <= YAHTZEE; i++)
                 if (scorecard[i] != -1)
                     scorecard[TOTAL] += scorecard[i];
-            */
         }
 
         static string FormatCell(int value)
@@ -93,10 +142,8 @@ namespace Yahtzee
             return (value < 0) ? "" : value.ToString();
         }
 
-        // takes the data structure for the user's scorecard and the data structure for the computer's scorecard as parameters
-        static void DisplayScoreCards(/* TODO */)
+        static void DisplayScoreCards(int[] uScorecard, int[] cScorecard)
         {
-            /* you can uncomment this code when you have declared the parameters
             string[] labels = {"Ones", "Twos", "Threes", "Fours", "Fives", "Sixes",
                                 "3 of a Kind", "4 of a Kind", "Full House", "Small Straight", "Large Straight",
                                 "Chance", "Yahtzee", "Sub Total", "Bonus", "Total Score"};
@@ -123,21 +170,24 @@ namespace Yahtzee
             Console.WriteLine(border);
             Console.WriteLine(String.Format(lineFormat, labels[TOTAL], FormatCell(uScorecard[TOTAL]), FormatCell(cScorecard[TOTAL]), ""));
             Console.WriteLine(border);
-            */
         }
         #endregion
 
         #region Rolling Methods
-        // rolls the specified number of dice and adds them to the data structure for the dice
-        // takes an integer that represents the number of dice to roll and a data structure to hold the dice as it's parameters
-        static void Roll(/* TODO */)
+
+        static void Roll(int numberOfDice, List<int> dice)
         {
+            dice.Clear();
+            Random random = new Random();
+            for (int i = 0; i < numberOfDice; i++)
+            {
+                int dieValue = random.Next(1, 7);
+                dice.Add(dieValue);
+            }
         }
 
-        // takes a data structure that is a set of dice as it's parameter.  Call it dice.
-        static void DisplayDice(/* TODO */)
+        static void DisplayDice(List<int> dice)
         {
-            /* you can uncomment this code when you have declared the parameter
             string lineFormat = "|   {0}  |";
             string border = "*------*";
             string second = "|      |";
@@ -157,25 +207,39 @@ namespace Yahtzee
             foreach (int d in dice)
                 Console.Write(border);
             Console.WriteLine();
-            */
         }
         #endregion
 
         #region Computer Play Methods
 
-        // figures out the highest possible score for the set of dice for the computer
-        // takes the scorecard datastructure and the set of dice that the computer is keeping as it's parameters
-        static int GetComputerScorecardItem(/* TODO */)
+        static int[] GetCounts(List<int> dice)
+        {
+            int[] counts = new int[6];
+
+            for (int i = 0; i < counts.Length; i++)
+            {
+                counts[i] = 0;
+            }
+
+            foreach (int die in dice)
+            {
+                counts[die - 1]++;
+            }
+
+            return counts;
+        }
+
+        static int GetComputerScorecardItem(int[] scorecard, List<int> keeping)
         {
             int indexOfMax = 0;
             int max = 0;
+            int[] counts = GetCounts(keeping);
 
-            /* you can uncomment this code once you've identified the parameters for this method
             for (int i = ONES; i <= YAHTZEE; i++)
             {
                 if (scorecard[i] == -1)
                 {
-                    int score = Score(i, keeping);
+                    int score = Score(i, counts);
                     if (score >= max)
                     {
                         max = score;
@@ -183,19 +247,13 @@ namespace Yahtzee
                     }
                 }
             }
-            */
 
             return indexOfMax;
         }
 
-        // implements the computer's turn.  The computer only rolls once.
-        // You can earn extra credit for making the computer play smarter
-        // takes the computer's scorecard data structure and scorecard count as parameters.  Both are altered by the method.
-        static void ComputerPlay(/* TODO */)
+        static void ComputerPlay(int[] cScorecard, ref int cScorecardCount)
         {
-            /* you can uncomment this code once you declare the parameters
-            declare a data structure for the dice that the computer is keeping.  Call it keeping.
-            int itemIndex = -1;
+            List<int> keeping = new List<int>();
 
             Roll(5, keeping);
             Console.WriteLine("The dice the computer rolled: ");
@@ -203,159 +261,196 @@ namespace Yahtzee
             Pause();
             Pause();
 
-            itemIndex = GetComputerScorecardItem(cScorecard, keeping);
-            cScorecard[itemIndex] = Score(itemIndex, keeping);
+            int itemIndex = GetComputerScorecardItem(cScorecard, keeping);
+            cScorecard[itemIndex] = Score(itemIndex, GetCounts(keeping));
             cScorecardCount++;
-            */
         }
         #endregion
 
         #region User Play Methods
 
-        // moves the dice that the user want to keep from the rolling data structure to the keeping data structure
-        // takes the rolling data structure and the keeping data structure as parameters
-        static void GetKeeping(/* TODO */)
+        static void GetKeeping(List<int> rollingDice, List<int> keepingDice)
         {
+            Console.WriteLine("These are the dice you rolled:");
+            DisplayDice(rollingDice);
+
+            Console.WriteLine("Which dice do you want to keep? Enter the indices separated by spaces:");
+            string input = Console.ReadLine();
+            string[] indices = input.Split(' ');
+
+            foreach (string indexStr in indices)
+            {
+                if (int.TryParse(indexStr, out int index) && index >= 0 && index < rollingDice.Count)
+                {
+                    keepingDice.Add(rollingDice[index]);
+                    rollingDice.RemoveAt(index);
+                }
+            }
         }
 
-        // on the last roll moves the dice that the user just rolled into the data structure for the dice that the user is keeping
-        static void MoveRollToKeep(/* TODO */)
+        static void MoveRollToKeep(List<int> rollingDice, List<int> keepingDice)
         {
-            // iterate through the rolling data structure and copy each item into the keeping data structure
-            // clear the rollling data structure
+            foreach (int die in rollingDice)
+            {
+                keepingDice.Add(die);
+            }
+
+            rollingDice.Clear();
         }
 
-        // asks the user which item on the scorecard they want to score 
-        // must make sure that the scorecard doesn't already have a value for that item
-        // remember that the scorecard is initialized with -1 in each item
-        // takes a scorecard data structure as it's parameter 
-        static int GetScorecardItem(/* TODO */)
+        static int GetScorecardItem(int[] scorecard)
         {
-            return -1;
+            int scorecardItem;
+
+            do
+            {
+                Console.WriteLine("Choose which item on the scorecard you want to score:");
+                Console.WriteLine("Enter a number between 0 and 15:");
+
+                if (!int.TryParse(Console.ReadLine(), out scorecardItem))
+                {
+                    Console.WriteLine("Invalid input. Please enter a number between 0 and 15.");
+                    continue;
+                }
+
+                if (scorecardItem < 0 || scorecardItem > 15)
+                {
+                    Console.WriteLine("Invalid input. Please enter a number between 0 and 15.");
+                    continue;
+                }
+
+                if (scorecard[scorecardItem] != -1)
+                {
+                    Console.WriteLine("That scorecard item already has a value. Please choose another.");
+                    continue;
+                }
+
+                break;
+            } while (true);
+
+            return scorecardItem;
         }
 
-        // implments the user's turn
-        // takes the user's scorecard data structure and the user's move count as parameters.  Both will be altered by the method.
-        static void UserPlay(/* TODO */)
+        static void UserPlay(int[] userScorecard, ref int userTurns)
         {
-            /*
-             * declare a data structure for the dice that the user is rolling
-             * declare a data structure for the dice that the user is keeping
-             * 
-             * declare a variable for the number of rolls
-             * declare a variable for the scorecard item that the user wants to score on this turn
-             * 
-             * do
-             *      Call Roll
-             *      increment the number of rolls
-             *      display a message
-             *      Call DisplayDice
-             *      if the number of rolls is < 3
-             *          Call GetKeeping
-             *      else
-             *          Call MoveRollToKeeping
-             *      end if
-             *      Call DisplayDice
-             * while the number of rolls < 3 and the number of dice the user is keeping is < 5
-             * 
-             * Call GetScorecardItem
-             * Call Score
-             * Increment the scorecard count
-             */
-        }
+            List<int> rollingDice = new List<int>();
+            List<int> keepingDice = new List<int>();
+            int rolls = 0;
+            int scorecardItem;
 
+            do
+            {
+                Roll(5, rollingDice);
+                rolls++;
+
+                Console.WriteLine($"Roll {rolls}:");
+                Console.WriteLine("The dice you rolled:");
+                DisplayDice(rollingDice);
+                Console.WriteLine();
+
+                if (rolls < 3)
+                {
+                    GetKeeping(rollingDice, keepingDice);
+                }
+                else
+                {
+                    MoveRollToKeep(rollingDice, keepingDice);
+                }
+
+                Console.WriteLine("The dice you're keeping:");
+                DisplayDice(keepingDice);
+                Console.WriteLine();
+
+            } while (rolls < 3 && keepingDice.Count < 5);
+
+            scorecardItem = GetScorecardItem(userScorecard);
+            userScorecard[scorecardItem] = Score(scorecardItem, GetCounts(keepingDice));
+            userTurns++;
+        }
         #endregion
 
         #region Scoring Methods
 
-        // counts how many of a specified value are in the set of dice
-        // takes the value that you're counting and the data structure containing the set of dice as it's parameter
-        // returns the count
-        static int Count(/* TODO */)
+        static int ScoreOnes(int[] counts)
         {
-            int count = 0;
-
-            return count;
+            return counts[ONES] * 1;
         }
 
-        // counts the number of ones, twos, ... sixes in the set of dice
-        // takes a data structure for a set of dice as it's parameter
-        // returns a data structure that contains the count for each dice value
-        static /* TODO */ void GetCounts(/* TODO */)
+        static int ScoreTwos(int[] counts)
         {
+            return counts[TWOS] * 2;
         }
 
-        // adds the value of all of the dice based on the counts
-        // takes a data structure that represents all of the counts as a parameter
-        static int Sum(/* TODO */)
+        static int ScoreThrees(int[] counts)
         {
-            int sum = 0;
-            /* you can uncomment this code once you have declared the parameter
-            for (int i = ONES; i <= SIXES; i++)
+            return counts[THREES] * 3;
+        }
+
+        static int ScoreFours(int[] counts)
+        {
+            return counts[FOURS] * 4;
+        }
+
+        static int ScoreFives(int[] counts)
+        {
+            return counts[FIVES] * 5;
+        }
+
+        static int ScoreSixes(int[] counts)
+        {
+            return counts[SIXES] * 6;
+        }
+
+        static int ScoreThreeOfAKind(int[] counts)
+        {
+            if (HasCount(counts, 3))
             {
-                int value = i + 1;
-                sum += (value * counts[i]);
+                return Sum(counts);
             }
-            */
-            return sum;
-        }
-
-        // determines if you have a specified count based on the counts
-        // takes a data structure that represents all of the counts as a parameter
-        static bool HasCount(/* TODO */)
-        {
-            /* you can uncomment this when you declare the parameter
-            foreach (int count in counts)
-                if (howMany == count)
-                    return true;
-            */
-            return false;
-        }
-
-        // chance is the sum of the dice
-        // takes a data structure that represents all of the counts as a parameter
-        static int ScoreChance(/* TODO */)
-        {
-            return 0;
-        }
-
-        // calculates the score for ONES given the set of counts (from GetCounts)
-        // takes a data structure that represents all of the counts as a parameter
-        static int ScoreOnes(/* TODO */)
-        {
-            // you can comment out this line when you have declared the parameters
-            // return counts[ONES] * 1;
-            return 0;
-        }
-
-        // WRITE ALL OF THESE: ScoreTwos, ScoreThrees, ScoreFours, ScoreFives, ScoreSies
-
-        // scores 3 of a kind.  4 of a kind or 5 of a kind also can be used for 3 of a kind
-        // the sum of the dice are used for the score
-        // takes a data structure that represents all of the counts as a parameter
-        static int ScoreThreeOfAKind(/* TODO */)
-        {
-            return 0;
-        }
-
-        // WRITE ALL OF THESE: ScoreFourOfAKind, ScoreYahtzee - a yahtzee is worth 50 points
-
-        // takes a data structure that represents all of the counts as a parameter
-        static int ScoreFullHouse(/* TODO */)
-        {
-            /* you can uncomment this code once you declare the parameter
-            if (HasCount(2, counts) && HasCount(3, counts))
-                return 25;
             else
-            */
-            return 0;
-
+            {
+                return 0;
+            }
         }
 
-        // takes a data structure that represents all of the counts as a parameter
-        static int ScoreSmallStraight(/* TODO */)
+        static int ScoreFourOfAKind(int[] counts)
         {
-            /* you can uncomment this code once you declare the parameter
+            if (HasCount(counts, 4))
+            {
+                return Sum(counts);
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+        static int ScoreYahtzee(int[] counts)
+        {
+            if (HasCount(counts, 5))
+            {
+                return 50;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+        static int ScoreFullHouse(int[] counts)
+        {
+            if (HasCount(2, counts) && HasCount(3, counts))
+            {
+                return 25;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+        static int ScoreSmallStraight(int[] counts)
+        {
             for (int i = THREES; i <= FOURS; i++)
             {
                 if (counts[i] == 0)
@@ -366,14 +461,11 @@ namespace Yahtzee
                 (counts[FIVES] >= 1 && counts[SIXES] >= 1))
                 return 30;
             else
-            */
-            return 0;
+                return 0;
         }
 
-        // takes a data structure that represents all of the counts as a parameter
-        static int ScoreLargeStraight(/* TODO */)
+        static int ScoreLargeStraight(int[] counts)
         {
-            /* you can uncomment this code once you declare the parameter
             for (int i = TWOS; i <= FIVES; i++)
             {
                 if (counts[i] == 0)
@@ -382,16 +474,16 @@ namespace Yahtzee
             if (counts[ONES] == 1 || counts[SIXES] == 1)
                 return 40;
             else
-            */
-            return 0;
+                return 0;
         }
 
-        // scores a score card item based on the set of dice
-        // takes an integer which represent the scorecard item as well as a data structure representing a set of dice as parameters
-        static int Score(/* TODO */)
+        static int ScoreChance(int[] counts)
         {
-            /* you can uncomment this code once you declare the parameter
-            int[] counts = GetCounts(dice);
+            return Sum(counts);
+        }
+
+        static int Score(int whichElement, int[] counts)
+        {
             switch (whichElement)
             {
                 case ONES:
@@ -423,8 +515,40 @@ namespace Yahtzee
                 default:
                     return 0;
             }
-            */
-            return 0;
+        }
+
+        static bool HasCount(int[] counts, int howMany)
+        {
+            foreach (int count in counts)
+                if (howMany == count)
+                    return true;
+
+            return false;
+        }
+
+        static int Sum(int[] counts)
+        {
+            int sum = 0;
+            for (int i = ONES; i <= SIXES; i++)
+            {
+                int value = i + 1;
+                sum += (value * counts[i]);
+            }
+
+            return sum;
+        }
+
+        static int Count(int valueToCount, List<int> dice)
+        {
+            int count = 0;
+            foreach (int die in dice)
+            {
+                if (die == valueToCount)
+                {
+                    count++;
+                }
+            }
+            return count;
         }
 
         #endregion
