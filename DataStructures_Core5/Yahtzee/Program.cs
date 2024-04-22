@@ -354,7 +354,7 @@ namespace Yahtzee
         // moves the dice that the user want to keep from the rolling data structure to the keeping data structure
         // takes the rolling data structure and the keeping data structure as parameters
 
-        //--watch for a error in this
+        //--watch for a error in this - this was for debugging but works now
         static void GetKeeping(List<int> rollingDice, List<int> keepingDice)
         {
             // Display the dice the user rolled and prompt for input
